@@ -1,19 +1,25 @@
-package ru.kata.spring.boot_security.demo.entity;
+package ru.kata.spring.boot_security.demo.model;
 
 import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.*;
+import java.util.List;
 import java.util.Set;
 
 @Entity
 @Table(name = "roles")
-public class Role implements GrantedAuthority {
-    @Id
+public class Role implements GrantedAuthority {    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column
     private String name;
-    @Transient
-    @ManyToMany(mappedBy = "roles")
+
+    @ManyToMany()
+    @JoinTable (name = "users_roles",
+            joinColumns = @JoinColumn (name = "roles_id"),
+            inverseJoinColumns = @JoinColumn (name = "user_id") )
     private Set<User> users;
+
     public Role() {
     }
 
@@ -53,5 +59,10 @@ public class Role implements GrantedAuthority {
     @Override
     public String getAuthority() {
         return getName();
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }
