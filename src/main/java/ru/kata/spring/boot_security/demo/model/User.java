@@ -2,121 +2,114 @@ package ru.kata.spring.boot_security.demo.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.Size;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
+@ToString
+@Getter
+@Setter
 public class User implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
     private Long id;
-    @Column
-    private String username;
-    @Column
-    private String secondName;
-    @Column
-    private int age;
-    @Column
-    private String email;
-    @Size(min=2, message = "Не меньше 5 знаков")
+
+    @Column(name = "username")
+    private String firstName;
+    @Column(name = "password")
     private String password;
-    @ManyToMany()
-    @JoinTable (name = "users_roles",
-    joinColumns = @JoinColumn (name = "user_id"),
-    inverseJoinColumns = @JoinColumn (name = "roles_id")
+
+    @Column(name = "name")
+    private String lastName;
+
+
+    @Column(name = "email", unique = true, nullable = false)
+    private String username;
+
+
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles;
+    @ToString.Exclude
+    private Set<Role> roles = new HashSet<>();
 
     public User() {
     }
-
-    public Long getId() {
-        return id;
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
-    public String getSecondName() {
-        return secondName;
-    }
-
-    public void setSecondName(String secondName) {
-        this.secondName = secondName;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return roles;
     }
 
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
-
     @Override
     @JsonIgnore
     public boolean isAccountNonExpired() {
         return true;
     }
-
     @Override
     @JsonIgnore
     public boolean isAccountNonLocked() {
         return true;
     }
-
     @Override
     @JsonIgnore
     public boolean isCredentialsNonExpired() {
         return true;
     }
-
     @Override
     @JsonIgnore
     public boolean isEnabled() {
         return true;
     }
 
+    public void setRole(Role role) {
+        roles.add(role);
+    }
+
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-
-        return getRoles();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        User user = (User) o;
+        return id != null && Objects.equals(id, user.id);
     }
+
     @Override
-    public String getPassword() {
-        return password;
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + username + '\'' +
+                ", roleList=" + roles +
+                '}';
     }
 
 }

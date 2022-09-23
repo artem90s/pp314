@@ -1,25 +1,38 @@
 package ru.kata.spring.boot_security.demo.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.repository.RoleRepository;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class RoleServiceImpl implements RoleService{
-    private RoleRepository roleRepository;
 
-    RoleServiceImpl(RoleRepository roleRepository){
-        this.roleRepository=roleRepository;
+    private final RoleRepository roleRepository;
+
+    public RoleServiceImpl(RoleRepository roleRepository) {
+        this.roleRepository = roleRepository;
+    }
+
+    public Set<Role> findAll() {
+        return new HashSet<>(roleRepository.findAll());
+    }
+
+    public Role findByName(String name) {
+        return roleRepository.findByName(name);
+    }
+    @Transactional
+    public void save(Role role) {
+        roleRepository.saveAndFlush(role);
     }
 
     @Override
-    public List<Role> allRoles() {
-        return roleRepository.findAll();
-    }
-
-    public Role getRole(Long id){
+    public Role findById(Long id) {
         return roleRepository.findById((long) Math.toIntExact(id)).orElse(null);
     }
+
 }

@@ -1,6 +1,7 @@
 package ru.kata.spring.boot_security.demo.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,71 +14,55 @@ import ru.kata.spring.boot_security.demo.repository.UserRepository;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
 @Transactional
 public class UserServiceImpl implements UserService,UserDetailsService {
-    final UserRepository userRepository;
-    final RoleRepository roleRepository;
-    final PasswordEncoder bCryptPasswordEncoder;
 
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder bCryptPasswordEncoder) {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder bCryptPasswordEncoder;
+
+    public UserServiceImpl(UserRepository userRepository, @Lazy PasswordEncoder bCryptPasswordEncoder) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = findByEmail(email);
-        if(user==null){
-            throw new UsernameNotFoundException(String.format("Эмейл '%s' не найден",email));
-        }
-//        user.getAuthorities().size();
-        return user;
+
+    public User findById(Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 
-
-    @Override
-    public boolean saveUser(User user) {
-        User userFromBD = userRepository.findByEmail(user.getUsername());
-        if(userFromBD != null) {
-            return false;
-        }
-        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        return true;
-    }
-
-    @Override
-    public boolean deleteUser(Long id) {
-        if(userRepository.findById(id).isPresent()){
-            userRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public User updateUser(User user) {
-        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
-        return userRepository.saveAndFlush(user);
-    }
-
-    @Override
-    public User getUser(Long id) {
-        Optional<User>user=userRepository.findById(id);
-        return user.orElse(new User());
-    }
-
-    @Override
-    public List<User> usersList() {
+    public List<User> findAll() {
         return userRepository.findAll();
     }
 
-    @Override
-    public User findByEmail (String email) {
-        return userRepository.findByEmail(email);
+
+    public void saveUser(User user) {
+        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        userRepository.saveAndFlush(user);
     }
+
+
+    public void updateUser(User user) {
+        if (!user.getPassword().equals(Objects.requireNonNull(userRepository.findById(user.getId()).orElse(null)).getPassword())){
+            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        }else {
+            user.setPassword(Objects.requireNonNull(userRepository.findById(user.getId()).orElse(null)).getPassword());
+        }
+        userRepository.saveAndFlush(user);
+    }
+
+
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return userRepository.findByUsername(username);
+    }
+
+
 }
